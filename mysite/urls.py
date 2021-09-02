@@ -18,6 +18,19 @@ from django.urls import path
 from blog import views                    #+
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('index', views.hello)          #+
+    # path('index', views.hello)   ,       #+
+    path('admin/', admin.site.urls)
 ]
+
+# 增加条目
+# handler400=views.bad_request
+# handler403=views.permission_denied
+# handler404=views.page_not_found
+# handler500=views.page_error
+
+
+
+
+
+
+

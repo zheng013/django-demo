@@ -8,6 +8,8 @@ manage.py     --命令行执行的工具，可以使用多种方式对项目进�
 
 ```
 
+# pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple  设置pip获取资源的源地址切换 清华源
+
 # python -m django --version
 
 # django-admin.py startproject mysite
@@ -44,3 +46,4 @@ migrations      --数据迁移、移植目录文件 记录数据库操作记录�
 Django项目环境终端  python  manage.py  shell
 
 ```
+

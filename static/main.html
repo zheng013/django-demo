@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>聊天室</title>
+  </head>
+  <body>
+    <div class="chat-wrapper">
+      <div class="chat-header">
+        <p id="title-name">欢迎进入聊天室。</p>
+        <button onclick="login_out()">离开</button>
+        <span class="chat-connect">已连接</span>
+        <span class="chat-disconnect">已断开</span>
+      </div>
+      <div class="chat-content">
+        <div class="chat-list"></div>
+        <div class="chat-body">
+          <div class="chat-msg"></div>
+          <div class="chat-send">
+            <textarea class="chat-textarea"></textarea>
+            <div class="chat-handler">
+              <span>Enter发送，Enter+Ctrl换行</span>
+              <button onclick="send_msg_btn()">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+      * {
+        padding: 0;
+        border: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: rgb(236, 236, 236);
+      }
+      .chat-connect {
+        margin-left: auto;
+        position: relative;
+      }
+      .chat-disconnect {
+        position: relative;
+        display: none;
+        margin-left: auto;
+      }
+      .chat-connect::before {
+        content: '';
+        display: block;
+        position: absolute;
+        top:50%;
+        left: -16px;
+        border-radius: 50%;
+        transform: translateY(-50%);
+        width: 0.8em;
+        height: 0.8em;
+        background: #13e823;
+      }
+      .chat-disconnect::before {
+        content: '';
+        display: block;
+        position: absolute;
+        top:50%;
+        left: -16px;
+        border-radius: 50%;
+        transform: translateY(-50%);
+        width: 0.8em;
+        height: 0.8em;
+        background: #f52525f2;
+      }
+      .chat-wrapper {
+        background: #fff;
+        width: 60%;
+        min-height: 80vh;
+        /* border: 1px solid; */
+        margin: 6em auto 0;
+        display: flex;
+        border-radius: 4px;
+        flex-direction: column;
+        padding-top: 10px;
+        box-shadow: 0px 0px 10px 0px rgb(202, 202, 202);
+      }
+      .chat-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 10px;
+        border-bottom: 1px solid #eee;
+      }
+      .chat-header button {
+        padding: 6px 18px;
+        margin-left: 10px;
+      }
+      .chat-content {
+        flex-grow: 1;
+        /* border: 1px solid #aaa; */
+        display: flex;
+      }
+      .chat-list {
+        display: flex;
+        width: 200px;
+        border-right: 1px solid #eee;
+        flex-direction: column;
+      }
+      .chat-body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0px 0px 2px 0px #aaa;
+      }
+      .chat-msg {
+        flex-grow: 1;
+        padding: 0.5em;
+      }
+      .chat-send {
+        height: 130px;
+        box-shadow: 0 0 10px 2px #eee;
+        display: flex;
+        flex-direction: column;
+      }
+      .chat-handler {
+        height: 40px;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 4px;
+        align-items: center;
+      }
+      .chat-handler button {
+        padding: 0.2em 0.9em;
+      }
+      .chat-handler span {
+        font-size: 14px;
+        opacity: 0.4;
+      }
+      .chat-textarea {
+        padding: 0.5em;
+        resize: none;
+        flex-grow: 1;
+        outline: none;
+      }
+    </style>
+    <script type="text/javascript">
+      var ws
+      var ws_url = 'ws://localhost:8000'
+      var chat_connect_ele=document.querySelector('.chat-connect')
+      var chat_disconnect_ele=document.querySelector('.chat-disconnect')
+      window.onload = function() {
+        const name = window.localStorage.getItem('nickname')
+        if (name) {
+          const title_ele = document.getElementById('title-name')
+          ws = new WebSocket(ws_url)
+          ws.onopen = function() {
+            chat_connect_ele.style.display='block'
+            chat_disconnect_ele.style.display='none'
+            add_msg('建立链接')
+          }
+          ws.onmessage = function(e) {
+            add_msg('获取到服务器发送过来的消息' + e.data)
+          }
+          ws.onclose = function() {
+            chat_disconnect_ele.style.display='block'
+            chat_connect_ele.style.display='none'
+            add_msg('连接断开')
+          }
+          ws.onerror = function() {
+            chat_disconnect_ele.style.display='block'
+            chat_connect_ele.style.display='none'
+            add_msg('连接出现错误')
+          }
+          title_ele.innerText = name + ',欢迎进入聊天室'
+        } else {
+          window.location.href = 'index.html'
+        }
+      }
+      function login_out() {
+        if (ws) {
+          if (ws.readyState === ws.OPEN) {
+            ws.close()
+          }
+        }
+        //  window.localStorage.removeItem('nickname')
+        //window.location.href = 'index.html'
+      }
+      function send_msg(text) {
+        if (!ws) {
+          return false
+        }
+        if (ws.readyState !== ws.OPEN) {
+          return false
+        }
+        ws.send(text)
+        add_msg('[客户端]：' + text)
+        return true
+      }
+      function send_msg_btn() {
+        const text = textarea_ele.value
+        if (!text) {
+          return
+        }
+        const result = send_msg(text)
+        if (result) {
+          textarea_ele.value = ''
+        }
+      }
+      function add_msg(text) {
+        const pannel = document.querySelector('.chat-msg')
+        p_ele = document.createElement('p')
+        p_ele.innerText = text
+        pannel.appendChild(p_ele)
+      }
+      function textarea_keydown_listener(e) {
+        const text = textarea_ele.value
+        if (e.keyCode === 13) {
+          if (e.ctrlKey) {
+            textarea_ele.value = text + '\n'
+          } else {
+            e.preventDefault()
+            send_msg_btn()
+          }
+        }
+      }
+      textarea_ele = document.querySelector('.chat-textarea')
+      textarea_ele.onkeydown = textarea_keydown_listener
+    </script>
+  </body>
+</html>

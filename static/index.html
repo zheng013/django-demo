@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>登录</title>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .form_wrapper {
+      min-height: 100vh;
+      background: #f9f9f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .form_main {
+      display: flex;
+      flex-direction: column;
+      align-content: center;
+      justify-content: center;
+    }
+    .form_main input {
+      height: 36px;
+      width: 300px;
+      border-radius: 4px;
+    }
+    .form_main input[type='text'] {
+      margin-top: 30px;
+      padding-left: 10px;
+      border: 1px solid #333;
+      outline: none;
+    }
+    .form_main input[type='submit'] {
+      margin-top: 20px;
+      background: #19c384;
+      border: none;
+      color: #fff;
+    }
+    .form_main input[type='submit']:hover {
+      opacity: 0.8;
+    }
+    .form_main h2 {
+      font-size: 24px;
+      text-align: center;
+    }
+  </style>
+  <body>
+    <div class="form_wrapper">
+      <form
+        class="form_main"
+        action="./main.html"
+        method="POST"
+        onsubmit="return login()"
+      >
+        <h2>聊天室</h2>
+        <input type="text" required name="nickname" />
+        <input type="submit" value="登录" />
+      </form>
+    </div>
+    <script type="text/javascript">
+      function login() {
+        const nickname_ele = document.getElementsByName('nickname')[0]
+        const nickname=nickname_ele.value
+        window.localStorage.setItem('nickname',nickname)
+        return true
+      }
+      window.onload=function(){
+        const nickname=window.localStorage.getItem('nickname')
+        if(nickname){
+          window.location.href='main.html'
+        }
+      }
+    </script>
+  </body>
+</html>
