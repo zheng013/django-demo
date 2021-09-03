@@ -16,10 +16,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from blog import views                    #+
-
+from .views import login,index,main,jquery
 urlpatterns = [
     # path('index', views.hello)   ,       #+
-    path('admin/', admin.site.urls)
+    path('admin/', admin.site.urls),
+    path('login',login),
+    path('index',index),
+    path('main',main),
+    path('static/libs/jquery.js',jquery),
 ]
 
 # 增加条目

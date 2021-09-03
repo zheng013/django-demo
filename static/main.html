@@ -11,8 +11,9 @@
       <div class="chat-header">
         <p id="title-name">欢迎进入聊天室。</p>
         <button onclick="login_out()">离开</button>
-        <span class="chat-connect">已连接</span>
-        <span class="chat-disconnect">已断开</span>
+        <span class="status chat-connecting">正在连接</span>
+        <span class="status chat-connect">已连接</span>
+        <span class="status chat-disconnect">已断开</span>
       </div>
       <div class="chat-content">
         <div class="chat-list"></div>
@@ -21,7 +22,7 @@
           <div class="chat-send">
             <textarea class="chat-textarea"></textarea>
             <div class="chat-handler">
-              <span>Enter发送，Enter+Ctrl换行</span>
+              <span>Enter发送，Ctrl+Enter换行</span>
               <button onclick="send_msg_btn()">发送</button>
             </div>
           </div>
@@ -40,6 +41,11 @@
       .chat-connect {
         margin-left: auto;
         position: relative;
+        display: none;
+      }
+      .chat-connecting {
+        margin-left: auto;
+        position: relative;
       }
       .chat-disconnect {
         position: relative;
@@ -50,7 +56,7 @@
         content: '';
         display: block;
         position: absolute;
-        top:50%;
+        top: 50%;
         left: -16px;
         border-radius: 50%;
         transform: translateY(-50%);
@@ -62,7 +68,7 @@
         content: '';
         display: block;
         position: absolute;
-        top:50%;
+        top: 50%;
         left: -16px;
         border-radius: 50%;
         transform: translateY(-50%);
@@ -70,12 +76,23 @@
         height: 0.8em;
         background: #f52525f2;
       }
+      .chat-connecting::before {
+        content: '';
+        display: block;
+        position: absolute;
+        top: 50%;
+        left: -16px;
+        border-radius: 50%;
+        transform: translateY(-50%);
+        width: 0.8em;
+        height: 0.8em;
+        background: #a1a0a0f2;
+      }
       .chat-wrapper {
         background: #fff;
-        width: 60%;
-        min-height: 80vh;
+        min-height: 94vh;
         /* border: 1px solid; */
-        margin: 6em auto 0;
+        margin:  auto 0;
         display: flex;
         border-radius: 4px;
         flex-direction: column;
@@ -113,6 +130,7 @@
       .chat-msg {
         flex-grow: 1;
         padding: 0.5em;
+        position: relative;
       }
       .chat-send {
         height: 130px;
@@ -129,6 +147,7 @@
       }
       .chat-handler button {
         padding: 0.2em 0.9em;
+        white-space: nowrap;
       }
       .chat-handler span {
         font-size: 14px;
@@ -140,39 +159,176 @@
         flex-grow: 1;
         outline: none;
       }
+      .friend_tab {
+        height: 60px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .friend_tab.active {
+        background: rgb(226 225 225);
+      }
+      .friend_tab:hover {
+        opacity: 0.6;
+        background: rgb(226 225 225);
+      }
+      .chat-card {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 1;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+        padding:  0 0.5em;
+      }
+      .chat-card.active {
+        z-index: 2;
+      }
     </style>
+    <script type="text/javascript" src="/static/libs/jquery.js"></script>
     <script type="text/javascript">
-      var ws
-      var ws_url = 'ws://localhost:8000'
-      var chat_connect_ele=document.querySelector('.chat-connect')
-      var chat_disconnect_ele=document.querySelector('.chat-disconnect')
+      var ws=''
+      var ws_url = 'ws://192.168.40.57:8000'   //同域名下的接口  本机内网ip
+      //var ws_url = 'ws://localhost:8000'
+      var chat_connect_ele = document.querySelector('.chat-connect')
+      var chat_disconnect_ele = document.querySelector('.chat-disconnect')
+      var currentuser = ''  //用于确定当前用户
+      var sender_to=''
+      //根据连接的信息判断当前指示灯的状态
+      function setStatus(type) {
+        $('.status').hide()
+        $('.status' + type).show()
+      }
+
+      $('.chat-list').on('click', '.friend_tab', function() {
+        if (!$(this).hasClass('active')) {
+          // 标记点击了谁
+          $('.friend_tab').removeClass('active')
+          $(this).addClass('active')
+          // 创建或切换到对应的聊天卡片上
+          var nickname = $(this).text()
+          sender_to=nickname
+          var chatCard = $(`.chat-msg .chat-card[data-target="${nickname}"]`)
+         /* if (chatCard.length == 0) {
+            // 不存在该聊天卡片，则创建
+            chatCard = $(
+              `<div class="chat-card" data-target="${nickname}"></div>`
+            )
+            $('.chat-main').append(chatCard)
+          }*/
+          // 隐藏之前的卡片
+          $('.chat-msg .chat-card').removeClass('active')
+          // 显示当前的卡片
+          chatCard.addClass('active')
+          // 显示和谁聊天
+          // $('#hello_text').text(`正在和“${nickname}”聊天`);
+          // currentChat = nickname;
+        }
+      })
+
       window.onload = function() {
         const name = window.localStorage.getItem('nickname')
         if (name) {
           const title_ele = document.getElementById('title-name')
-          ws = new WebSocket(ws_url)
-          ws.onopen = function() {
-            chat_connect_ele.style.display='block'
-            chat_disconnect_ele.style.display='none'
-            add_msg('建立链接')
-          }
-          ws.onmessage = function(e) {
-            add_msg('获取到服务器发送过来的消息' + e.data)
-          }
-          ws.onclose = function() {
-            chat_disconnect_ele.style.display='block'
-            chat_connect_ele.style.display='none'
-            add_msg('连接断开')
-          }
-          ws.onerror = function() {
-            chat_disconnect_ele.style.display='block'
-            chat_connect_ele.style.display='none'
-            add_msg('连接出现错误')
-          }
           title_ele.innerText = name + ',欢迎进入聊天室'
+          currentuser = name
+          $.ajax({
+            url: '/login',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              nickname: name
+            }),
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+              if (data.status === 1) {
+                const auth = data.auth
+                connect(ws_url + '?auth=' + auth)
+              } else {
+                alert('系统通知' + data.err)
+              }
+            },
+            fail: function(err) {
+              console.error(err)
+              alert('发送错误' + err)
+            }
+          })
         } else {
-          window.location.href = 'index.html'
+          window.location.href = 'index'
         }
+      }
+      function connect(url) {
+        ws = new WebSocket(url)
+        ws.onopen = function(e) {
+          setStatus('.chat-connect')
+          addFriend(currentuser)
+          add_msg(currentuser, 'system', '加入聊天')
+        }
+        ws.onmessage = function(e) {
+          const message = JSON.parse(e.data)
+          console.log('message :>> ', message)
+          const { sender, contentType, content } = message
+          if (sender === 'system') {
+            if (contentType === 'friendsList') {
+              loadFrendslist(content)
+            } else if (contentType === 'addFriend') {
+              addFriend(content)
+              add_msg(currentuser, 'system',  content+'加入聊天')
+            } else if (contentType === 'removeFriend') {
+              removeFriend(content)
+              add_msg(currentuser, 'system',  content+'离开聊天')
+            }else{
+              add_msg(currentuser, 'system',  content)
+            }
+          } else {
+            add_msg(sender,sender,content)
+          }
+          //addFriend(message.content)
+        }
+        ws.onclose = function() {
+          setStatus('.chat-disconnect')
+          add_msg(currentuser, 'system', '连接断开')
+        }
+        ws.onerror = function() {
+          setStatus('.chat-disconnect')
+          add_msg(currentuser, 'system', '连接出现错误')
+        }
+      }
+      function addFriend(nickname) {
+        //添加用户
+        //通过currenuser判断是不是当前用于 创建首个的用户列表信息和聊天面板
+        const list_table = $('.chat-list')
+        let friend_div 
+        let chatCard
+        if (currentuser === nickname) {
+          friend_div = $(`<div class='friend_tab active'>${nickname}</div>`)
+        } else {
+          friend_div = $(`<div class='friend_tab'>${nickname}</div>`)
+        }
+        list_table.append(friend_div)
+        //创建聊天卡片
+        if (currentuser === nickname) {
+           chatCard = $(`<div class='chat-card active' data-target=${nickname}>`)
+        } else {
+           chatCard = $(`<div class='chat-card' data-target=${nickname}>`)
+        }
+        $('.chat-msg').append(chatCard)
+      }
+      function loadFrendslist(list) {
+        // 加载用户列表
+        $('.chat-msg')
+          .not(':first')
+          .remove()
+        ;[...list].forEach(name => addFriend(name))
+      }
+      function removeFriend(auth) {
+        //断开连接后 移除用户
+        $(`.friend_tab:contains(${auth})`).remove()
+        $(`.chat-card[data-target='${auth}']`).remove()
       }
       function login_out() {
         if (ws) {
@@ -190,12 +346,17 @@
         if (ws.readyState !== ws.OPEN) {
           return false
         }
-        ws.send(text)
-        add_msg('[客户端]：' + text)
+        data={
+          sendTo:sender_to,
+          contentType:'text',
+          content:text
+        }
+        ws.send(JSON.stringify(data))
+        add_msg(sender_to,currentuser,text)
         return true
       }
       function send_msg_btn() {
-        const text = textarea_ele.value
+        const text = textarea_ele.value.trim()
         if (!text) {
           return
         }
@@ -204,11 +365,14 @@
           textarea_ele.value = ''
         }
       }
-      function add_msg(text) {
-        const pannel = document.querySelector('.chat-msg')
+      function add_msg(target, sender, text) {
+        if(!sender){
+          sender=currentuser
+        }
+        const pannel = $(` .chat-card[data-target='${target}']`)
         p_ele = document.createElement('p')
-        p_ele.innerText = text
-        pannel.appendChild(p_ele)
+        p_ele.innerText = sender + ':' + text
+        pannel.append(p_ele)
       }
       function textarea_keydown_listener(e) {
         const text = textarea_ele.value

@@ -54,7 +54,7 @@
     <div class="form_wrapper">
       <form
         class="form_main"
-        action="./main.html"
+        action="./main"
         method="POST"
         onsubmit="return login()"
       >
@@ -73,7 +73,7 @@
       window.onload=function(){
         const nickname=window.localStorage.getItem('nickname')
         if(nickname){
-          window.location.href='main.html'
+          window.location.href='main'
         }
       }
     </script>
