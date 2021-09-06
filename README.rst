@@ -1,6 +1,20 @@
+## 聊天室项目
+安装 python3  、 daphne服务器
+```()
+daphne -b 0.0.0.0 -p 8000 mysite.asgi:application
+-b指定主机，后台服务需要使用0.0.0.0作为服务主机
+# 才能够通过有局域网的ip地址进行访问
+使用该服务器能够启动websocket的项目访问。
+```
+
+
+
+
+
+
 ```(lua)
 ——mysite        --代表整个程序的配置目录
-  init        --默认需要生成的文件，代表这个目录是一个模块
+  __init__.py        --默认需要生成的文件，代表这个目录是一个模块
   settings    --项目的配置文件
   url         --URL对应路由界面的关系
   wsgi        --遵循的规范 uwsgi+nginx
